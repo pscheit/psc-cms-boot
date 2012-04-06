@@ -1,0 +1,8 @@
+language: php
+php:
+  - 5.3
+  
+script: phpunit
+
+notifications:
+  irc: "irc.freenode.org#psc-cms"
