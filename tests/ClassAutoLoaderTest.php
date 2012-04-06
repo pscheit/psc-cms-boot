@@ -50,6 +50,7 @@ class ClassAutoLoaderTest extends \PHPUnit_Framework_TestCase {
   }
   
   /**
+   *
    */
   public function testaddPSR0AddsAllPaths() {
     $this->autoLoader->addPSR0(self::$psr0Dir);
@@ -66,6 +67,37 @@ class ClassAutoLoaderTest extends \PHPUnit_Framework_TestCase {
     $this->assertArrayHasKey('Psc\CMS\Project', $paths);
     $this->assertArrayHasKey('Psc\Exception', $paths);
     $this->assertArrayHasKey('Psc\PSC', $paths);
+  }
+  
+  
+  public function testRequiresFilesWhenRegistered() {
+    $this->expectRequirePaths($this->exactly(3));
+    $paths = self::getPSR0Paths();
+    
+    $this->autoLoader->init();
+    $this->autoLoader->addPSR0(self::$psr0Dir);
+    
+    $this->assertFalse(class_exists('Psc\Exception', FALSE),'Psc\Exception ist avaible before!'); // pre
+    class_exists('Psc\Exception',TRUE); // trigger, das ist trotzdem FALSE! (da wir require nicht durchschleifen sondern gemockt haben)
+    class_exists('Doctrine\ORM\EntityManager');
+    class_exists('Psc\CMS\MyClass1',TRUE);
+    
+    $this->assertEquals(array(
+                              $paths['Psc\Exception'],
+                              $paths['Doctrine\ORM\EntityManager'],
+                              $paths['Psc\CMS\MyClass1']
+                              ),
+                        $this->requiredPaths
+                      );
+  }
+  
+  public function testAutoLoadingAcceptance() {
+    $autoLoader = new ClassAutoLoader();
+    $autoLoader->addPSR0(self::$psr0Dir);
+    $autoLoader->init();
+    
+    $this->assertFalse(class_exists('Psc\Exception',FALSE));
+    $this->assertInstanceOf('Psc\Exception',new \Psc\Exception()); // exception gets autoloaded
   }
   
   protected function createAutoLoader() {
