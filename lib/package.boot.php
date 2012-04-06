@@ -8,6 +8,8 @@
  */
 namespace Psc\Boot;
 
+use Exception;
+use Phar;
 
 /**
  * Eine Klasse die Bootstrapping Prozesse vereinheitlicht
@@ -266,8 +268,54 @@ class ClassAutoLoader {
     return $this;
   }
   
+  /**
+   * Fügt ein PSR-0 Standard Verzeichnis hinzu
+   *
+   * jedes Unterverzeichnis (!) dieses Verzeichnisses wird als der erste Namespace ausgewertet
+   *
+   * lib/Psc
+   * lib/Doctrine
+   *
+   * dann müsste zu addPSR0('/path/to/lib/') übergeben werden
+   */
   public function addPSR0($directory) {
     $directory = realpath($directory);
+    
+    if (!is_dir($directory)) {
+      throw new Exception('Angegebenes ist kein Verzeichnis: '.$directory);
+    }
+    
+    $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory), \RecursiveIteratorIterator::LEAVES_ONLY);
+    $parentLength = mb_strlen($directory);
+    $paths = array();
+    foreach ($iterator as $file) {
+      if ($file->getExtension() === 'php') {
+        $class = mb_substr(str_replace(DIRECTORY_SEPARATOR, '\\', mb_substr($file->getRealPath(),$parentLength+1)),0,-4); // mb_strlen('.php')
+        $paths[$class] = (string) $file;
+      }
+    }
+    
+    return $this->addPaths($paths);
+  }
+  
+  public function addPhar($pharFile) {
+    $phar = new Phar($pharFile);
+
+    $wrapped = rtrim('phar://'.$pharFile,'\\/');
+    $parentLength = mb_strlen($wrapped)+1;
+
+    $iterator = new \RecursiveIteratorIterator($phar, \RecursiveIteratorIterator::LEAVES_ONLY);
+    $paths = array();
+    foreach ($iterator as $file) {
+      $fInfo = $file->getFileInfo();
+      
+      if ($fInfo->getExtension() === 'php') {
+        $class = mb_substr(str_replace('/', '\\', mb_substr((string) $fInfo, mb_strlen($wrapped)+1)), 0,-4);
+        $paths[$class] = (string) $fInfo;
+      }
+    }
+    
+    return $this->addPaths($paths);
   }
 
   /**
@@ -305,7 +353,7 @@ class ClassAutoLoader {
     return $this;
   }
 
-  /**
+  /**p
    * @return array
    */
   public function getPaths() {

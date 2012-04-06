@@ -50,12 +50,22 @@ class ClassAutoLoaderTest extends \PHPUnit_Framework_TestCase {
   }
   
   /**
-   * @dataProvider getPSR0Fixtures
    */
-  public function testaddPSR0AddsAllPaths($expectedPaths) {
-    
-    
+  public function testaddPSR0AddsAllPaths() {
     $this->autoLoader->addPSR0(self::$psr0Dir);
+    
+    $this->assertEquals(self::getPSR0Paths(), $this->autoLoader->getPaths());
+  }
+
+  public function testaddPharAddsAllPaths() {
+    $phar = __DIR__.DIRECTORY_SEPARATOR.'_files'.DIRECTORY_SEPARATOR.'test.phar.gz';
+    $this->autoLoader->addPhar($phar);
+    
+    $paths = $this->autoLoader->getPaths();
+    
+    $this->assertArrayHasKey('Psc\CMS\Project', $paths);
+    $this->assertArrayHasKey('Psc\Exception', $paths);
+    $this->assertArrayHasKey('Psc\PSC', $paths);
   }
   
   protected function createAutoLoader() {
@@ -74,27 +84,20 @@ class ClassAutoLoaderTest extends \PHPUnit_Framework_TestCase {
                      ->will($this->returnCallback($logPath));
   }
 
-  public static function getPSR0Fixtures() {
-    $tests = array();
-    
+  public static function getPSR0Paths() {
     $psr0Dir = self::$psr0Dir;
     $path = function() use ($psr0Dir) {
       $parts = func_get_args();
       return realpath($psr0Dir.implode(DIRECTORY_SEPARATOR, $parts));
     };
     
-    $tests[] = array(
+    return array(
       'Psc\CMS\MyClass1' => $path('Psc','CMS','MyClass1.php'),
       'Psc\CMS\MyClass2' => $path('Psc','CMS','MyClass2.php'),
       'Psc\Exception' => $path('Psc','Exception.php'),
-    );
-    
-    $tests[] = array(
-      'Doctrine\ORM\EntityManager' => $path('Psc','CMS','MyClass1.php'),
+      'Doctrine\ORM\EntityManager' => $path('Doctrine','ORM','EntityManager.php'),
       'Doctrine\Common\Collections\Collection' => $path('Doctrine','Common','Collections\Collection.php')
     );
-
-    return $tests;
   }
 }
 ?>
