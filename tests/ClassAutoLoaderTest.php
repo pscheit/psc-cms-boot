@@ -96,7 +96,7 @@ class ClassAutoLoaderTest extends \PHPUnit_Framework_TestCase {
       'Psc\CMS\MyClass2' => $path('Psc','CMS','MyClass2.php'),
       'Psc\Exception' => $path('Psc','Exception.php'),
       'Doctrine\ORM\EntityManager' => $path('Doctrine','ORM','EntityManager.php'),
-      'Doctrine\Common\Collections\Collection' => $path('Doctrine','Common','Collections\Collection.php')
+      'Doctrine\Common\Collections\Collection' => $path('Doctrine','Common','Collections','Collection.php')
     );
   }
 }
