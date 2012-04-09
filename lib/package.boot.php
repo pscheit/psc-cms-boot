@@ -4,12 +4,16 @@
  *
  * Psc\Boot\BootLoader
  * Psc\Boot\ClassAutoLoader (lädt PHP Dateien aus beliebigen Quellen)
- * 
+ * Psc\Boot\Exception
  */
 namespace Psc\Boot;
 
-use Exception;
 use Phar;
+use Psc\CMS\ProjectsFactory;
+use Psc\CMS\Configuration;
+use Psc\PSC;
+
+class Exception extends \Exception {}
 
 /**
  * Eine Klasse die Bootstrapping Prozesse vereinheitlicht
@@ -19,6 +23,11 @@ use Phar;
  * oder in binärForm aufgerufen werden
  *
  * natives PHP!
+ *
+ * How-To:
+ *
+ * host-config nicht benutzen:
+ * $bootLoader->setHostConfig(new \Psc\CMS\Configuration(array()));
  */
 class BootLoader {
   
@@ -33,6 +42,11 @@ class BootLoader {
    * Ein Pfad soll als absolut angesehen werden
    */
   const ABSOLUTE     = 0x000002;
+  
+  /**
+   * Validiert den Pfad und schmeisst eine Exception, wenn er nicht existiert
+   */
+  const VALIDATE     = 0x000004;
   
   /**
    * Lädt die Sourcen aus den PHP-Source Dateien
@@ -57,6 +71,13 @@ class BootLoader {
    * @var string voller Pfad
    */
   protected $pharsDir;
+  
+  /**
+   * Der ClassPath der Sourcen für das Psc - CMS
+   *
+   * sollte das parent verzeichnis von "Psc" sein
+   */
+  protected $pscClassPath;
   
   /**
    * @var string voller Datei-Pfad
@@ -89,38 +110,39 @@ class BootLoader {
   public function __construct($dir = NULL) {
     $this->dir = $this->ts($dir ?: __DIR__);
     $this->hostConfigFile = $this->dir.'host-config.php';
-  }
-  
-  /**
-   * Versucht alle Pfade die noch nicht gesetzt wurden zu erraten
-   *
-   * d.h. erst alle Pfade setzen und dann init() aufrufen
-   * dann boot()
-   */
-  public function init() {
-    if (!$this->init) {
-      $this->init = TRUE;
-      
-      
-    }
-    return $this;
+    $this->pharsDir = $this->dir;
   }
   
   /**
    * Führt den Boot der Environment aus
+   * 
+   * Versucht alle Pfade die noch nicht gesetzt wurden zu erraten
+   * d.h. erst alle Pfade setzen und dann init() aufrufen
    *
+   * danach kann z.b. getProjectsFactory aufgerufen werden
    */
-  public function boot($cmsMode = self::PHAR) {
-    $this->bootPscCMS($cmsMode);
-    
-    //$projectsFactory = $this->getProjectsFactory();
-    
+  public function init($cmsMode = self::PHAR) {
+    if (!$this->init) {
+      $this->init = TRUE;
+      
+      $this->initPscCMS($cmsMode);
+    }
+    return $this;
   }
   
-  public function bootPscCMS($mode = self::PHAR) {
-    /* Wir laden den entsprechenden passenden AutoLoader */
+  public function initPscCMS($mode = self::PHAR) {
+    /* Wir laden den AutoLoader mit dem Mode entsprechenden Sourcen */
     $autoLoader = $this->getAutoLoader();
     
+    if ($mode === self::PHAR) {
+      $autoLoader->addPhar($this->getPhar('psc-cms'));
+    } else {
+      $autoLoader->addPSR0($this->getPscClassPath());
+    }
+    
+    $autoLoader->init();
+    PSC::setAutoLoader($autoLoader);
+    PSC::setProjectsFactory($factory = $this->getProjectsFactory());
   }
   
   /**
@@ -129,8 +151,19 @@ class BootLoader {
   public function getProjectsFactory() {
     $this->init();
     if (!isset($this->projectsFactory)) {
-      $this->projectsFactory = new CMS\ProjectsFactory($this->getHostConfig());
+      $this->projectsFactory = new ProjectsFactory($this->getHostConfig());
     }
+    return $this->projectsFactory;
+  }
+  
+  /**
+   * Setzt den Root-Pfad in dem nach Root-Verzeichnissen für Projekte gesucht werden soll
+   *
+   * sind die Roots für Projekte in der host-config eingetragen, wird dieses Setting ignoriert
+   */
+  public function setProjectsRoot(\Psc\System\Dir $dir) {
+    $this->getProjectsFactory()->setProjectsRoot($dir);
+    return $this;
   }
   
   /**
@@ -140,8 +173,10 @@ class BootLoader {
     if (!isset($this->hostConfig)) {
       require_once $this->getHostConfigFile();
       
-      $this->hostConfig = new CMS\Configuration($conf);
+      $this->hostConfig = new Configuration(isset($conf) ? (array) $conf : array());
     }
+    
+    return $this->hostConfig;
   }
 
   /**
@@ -156,6 +191,7 @@ class BootLoader {
     if (!isset($this->autoLoader)) {
       $this->autoLoader = new ClassAutoLoader();
     }
+    return $this->autoLoader;
   }
   
   /**
@@ -177,6 +213,11 @@ class BootLoader {
     return $this->hostConfigFile;
   }
   
+  public function setProjectPath($name, $key, $value) {
+    $this->getProjectsFactory()->setProjectPath($name, $key, $value);
+    return $this;
+  }
+  
   public function setPharBinaries($path, $flags = 0x000000, Array $aliases = array()) {
     $this->pharsDir = $this->getPath($path, $flags);
     
@@ -184,6 +225,37 @@ class BootLoader {
       throw new Exception('YAGNI');
     }
     return $this;
+  }
+
+  /**
+   *
+   * defaults: ../src dann ../lib dann ./
+   */
+  public function getPscClassPath() {
+    if (!isset($this->pscClassPath)) {
+      // wir nehmen an, dass unsere binaries "neben" src liegen und suchen zuerst nach src und dann nach lib
+      if (($src = $this->tryPath('../src',self::RELATIVE)) !== FALSE) {
+        $this->pscClassPath = $src;
+      } elseif (($lib = $this->tryPath('../lib',self::RELATIVE)) !== FALSE) {
+        $this->pscClassPath = $lib;
+      } else {
+        $this->pscClassPath = $this->dir;
+      }
+    }
+    
+    return $this->pscClassPath;
+  }
+  
+  public function getPhar($name) {
+    if (mb_strrpos($name,'.phar.gz') === mb_strlen($name)-mb_strlen('.phar.gz')) {
+      $name = mb_substr($name,0,-mb_strlen('.phar.gz'));
+    }
+    
+    if (file_exists($pharFile = $this->pharsDir.$name.'.phar.gz')) {
+      return $pharFile;
+    } else {
+      throw new Exception('Es wurde nach '.$pharFile.' gesucht aber die Datei nicht gefunden. Es ist möglich das Root-Verzeichnis der Phars mit setPharBinaries() zu setzen');
+    }
   }
 
   /**
@@ -196,7 +268,39 @@ class BootLoader {
       $path = $this->dir.ltrim($path,'\\/');
     }
     
+    if (($flags & self::VALIDATE) === self::VALIDATE) {
+      if (($rPath = realpath($path)) !== FALSE) {
+        $path = $rPath;
+      } else {
+        throw new Exception('Pfad: '.$path.' konnte nicht gefunden werden',self::VALIDATE);
+      }
+    }
+    
     return $this->ts($path);
+  }
+  
+  public function tryPath($path, $flags = 0x000000) {
+    $flags |= self::VALIDATE;
+    try {
+      return $this->getPath($path, $flags);
+    } catch (Exception $e) {
+      if ($e->getCode() === self::VALIDATE) {
+        return FALSE;
+      } else {
+        throw $e;
+      }
+    }
+  }
+  
+  /**
+   *
+   * init() muss aufgerufen worden sein! sonst bekommt man eine classLoad exception, dass Psc\System\Dir nicht da ist
+   * das Verzeichnis muss physikalisch existieren
+   * für absolute pfade unbedingt flags self::ABSOLUTE angeben (da default auf relative)
+   */
+  public function getDir($path, $flags = self::RELATIVE) {
+    $flags |= self::VALIDATE;
+    return new \Psc\System\Dir($this->getPath($path, $flags));
   }
   
   protected function ts($path) {
@@ -221,6 +325,7 @@ class BootLoader {
 class ClassAutoLoader {
   
   protected $paths = array();
+  protected $init = FALSE;
 
   /**
    * Wird die Klasse nicht gefunden wird FALSE zurückgegeben
@@ -264,7 +369,10 @@ class ClassAutoLoader {
   }
   
   public function init() {
-    $this->register();
+    if (!$this->init) {
+      $this->init = TRUE;
+      $this->register();
+    }
     return $this;
   }
   
