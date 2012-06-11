@@ -326,6 +326,8 @@ class ClassAutoLoader {
   
   protected $paths = array();
   protected $init = FALSE;
+  
+  protected $debug = FALSE;
 
   /**
    * Wird die Klasse nicht gefunden wird FALSE zurückgegeben
@@ -349,6 +351,8 @@ class ClassAutoLoader {
       $this->requirePath($path);
       
       return TRUE;
+    } elseif ($this->debug) {
+      throw new \Exception('File for Class not Found: '.$class.' This Paths '.count($this->paths).' Fles');
     }
     
     return FALSE;
@@ -466,6 +470,11 @@ class ClassAutoLoader {
    */
   public function getPaths() {
     return $this->paths;
+  }
+  
+  public function setDebug($bool = TRUE) {
+    $this->debug = $bool;
+    return $this;
   }
 }
 ?>
