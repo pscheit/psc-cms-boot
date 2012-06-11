@@ -56,7 +56,7 @@ class BootLoader {
   /**
    * Lädt die Sourcen aus den PHAR-Dateien
    */
-  const PHAR = 'native';
+  const PHAR = 'phar';
   
   /**
    * Der Verzeichnis zu dem alle relativen Pfade ausgerichtet werden
@@ -111,6 +111,15 @@ class BootLoader {
     $this->dir = $this->ts($dir ?: __DIR__);
     $this->hostConfigFile = $this->dir.'host-config.php';
     $this->pharsDir = $this->dir;
+  }
+  
+  /**
+   * @param string $relative der Relativer Pfad von dieser Datei zum Hauptverzeichnis
+   *
+   * self::createRelative('../bin/');
+   */
+  public static function createRelative($relative) {
+    return new static(realpath(__DIR__.DIRECTORY_SEPARATOR.str_replace(array('/','\\'), DIRECTORY_SEPARATOR, $relative)));
   }
   
   /**
