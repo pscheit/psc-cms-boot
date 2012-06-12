@@ -1,0 +1,1 @@
+[![Build Status](https://secure.travis-ci.org/pscheit/psc-cms-boot.png?branch=master)](http://travis-ci.org/pscheit/psc-cms-boot)
