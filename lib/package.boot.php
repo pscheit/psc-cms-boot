@@ -268,6 +268,11 @@ class BootLoader {
     return $this->pscClassPath;
   }
   
+  public function setPscClassPath($path) {
+    $this->pscClassPath = $path;
+    return $this;
+  }
+  
   public function getPhar($name) {
     if (mb_strrpos($name,'.phar.gz') === mb_strlen($name)-mb_strlen('.phar.gz')) {
       $name = mb_substr($name,0,-mb_strlen('.phar.gz'));
@@ -416,7 +421,7 @@ class ClassAutoLoader {
     $directory = realpath($directory);
     
     if (!is_dir($directory)) {
-      throw new Exception('Angegebenes ist kein Verzeichnis: '.$directory);
+      throw new Exception(sprintf("Angegebenes Verzeichnis '%s' ist nicht vorhanden.", $directory));
     }
     
     $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory), \RecursiveIteratorIterator::LEAVES_ONLY);
