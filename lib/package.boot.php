@@ -57,6 +57,11 @@ class BootLoader {
    * Lädt die Sourcen aus den PHAR-Dateien
    */
   const PHAR = 'phar';
+
+  /**
+   * Lädt die Sourcen von Composer (vendor)
+   */
+  const COMPOSER = 'composer';
   
   /**
    * Der Verzeichnis zu dem alle relativen Pfade ausgerichtet werden
@@ -102,6 +107,11 @@ class BootLoader {
   protected $hostConfig;
   
   /**
+   * @var Psc\CMS\Container
+   */
+  protected $container;
+  
+  /**
    * @var bool
    */
   protected $init = FALSE;
@@ -136,22 +146,37 @@ class BootLoader {
       
       $this->initPscCMS($cmsMode);
     }
+    
     return $this;
   }
   
   public function initPscCMS($mode = self::PHAR) {
-    /* Wir laden den AutoLoader mit dem Mode entsprechenden Sourcen */
-    $autoLoader = $this->getAutoLoader();
-    
-    if ($mode === self::PHAR) {
-      $autoLoader->addPhar($this->getPhar('psc-cms'));
+    if ($mode === self::COMPOSER) {
+      require $this->getPath('vendor/', BootLoader::RELATIVE | BootLoader::VALIDATE).'autoload.php';
+      
     } else {
-      $autoLoader->addPSR0($this->getPscClassPath());
+      /* Wir laden den AutoLoader mit dem Mode entsprechenden Sourcen */
+      $autoLoader = $this->getAutoLoader();
+    
+      if ($mode === self::PHAR) {
+        $autoLoader->addPhar($this->getPhar('psc-cms'));
+      } else {
+        $autoLoader->addPSR0($this->getPscClassPath());
+      }
+      
+      $autoLoader->init();
+      PSC::setAutoLoader($autoLoader);
+      PSC::setProjectsFactory($factory = $this->getProjectsFactory());
+    }
+  }
+  
+  public function getCMSContainer() {
+    if (!isset($this->container)) {
+      $this->container = new \Psc\CMS\Container($this->dir);
+      $this->container->init();
     }
     
-    $autoLoader->init();
-    PSC::setAutoLoader($autoLoader);
-    PSC::setProjectsFactory($factory = $this->getProjectsFactory());
+    return $this->container;
   }
   
   /**
