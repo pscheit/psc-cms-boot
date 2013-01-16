@@ -174,6 +174,7 @@ class BootLoader {
     if (!isset($this->container)) {
       $this->container = new \Psc\CMS\Container($this->dir);
       $this->container->init();
+      $GLOBALS['env']['container'] = $this->container;
     }
     
     return $this->container;
