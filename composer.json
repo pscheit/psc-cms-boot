@@ -1,0 +1,14 @@
+{
+    "name": "pscheit/psc-cms-boot",
+    "description": "Boot strapping package for Webforge",
+    "authors": [
+        {
+            "name": "Philipp Scheit",
+            "email": "p.scheit@ps-webforge.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+
+    }
+}
