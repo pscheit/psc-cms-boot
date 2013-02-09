@@ -148,9 +148,11 @@ class BootLoader {
     } catch (Exception $e) {
       if ($e->getCode() === self::VALIDATE) {
         return FALSE;
+// @codeCoverageIgnoreStart
       } else {
         throw $e;
       }
+// @codeCoverageIgnoreEnd
     }
   }
   
