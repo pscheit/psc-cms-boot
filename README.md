@@ -9,7 +9,7 @@ PHP Bootloading Sucks - at least that helps to suck a little more less
  - helps in early stages bootstrapping
  - lets you bootstrap a Psc - CMS - Container for Psc - CMS - Projects
 
-Copy the ''lib/package.boot.php'' next to your ''bootstrap.php''
+Copy the `lib/package.boot.php` next to your `bootstrap.php`
 ```php
 use Psc\Boot\BootLoader;
 
@@ -18,3 +18,7 @@ $bootLoader = new BootLoader(__DIR__);
 $bootLoader->loadComposer();
 $bootLoader->registerCMSContainer(); // this is optional
 ```
+
+When you registered the CMSContainer `$GLOBALS['env']['container']` points to the `Psc\CMS\Container` and `$GLOBALS['env']['root']` points to a `\Webforge\Common\System\Dir` which is the directory of your bootstrap.php.
+
+
