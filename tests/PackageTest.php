@@ -71,6 +71,28 @@ class PackageTest extends \PHPUnit_Framework_TestCase {
     );
   }
   
+  public function testBootLoaderRegistersTheRootAsStringIfWebforgeCommonDirIsNotExistant() {
+    extract($this->help());
+
+    $this->bootLoader->registerPackageRoot();
+
+    $this->assertEquals(
+      $path('_files','boot','acceptance'),
+      $GLOBALS['env']['root']
+    );
+  }
+
+  public function testBootLoaderDoesNotOvverideGlobals() {
+    $GLOBALS['env']['root'] = NULL;
+    $this->bootLoader->registerPackageRoot();
+
+    $this->assertEquals(
+      NULL,
+      $GLOBALS['env']['root']
+    );
+  }
+
+
   public function help() {
     $baseDir = $this->testsDir;
     $path = function() use ($baseDir) {
