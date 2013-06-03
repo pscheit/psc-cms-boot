@@ -121,7 +121,7 @@ class BootLoader {
    */
   public function registerPackageRoot() {
     if (!isset($GLOBALS['env']) || !array_key_exists('root', $GLOBALS['env'])) {
-      return $GLOBALS['env']['root'] = class_exists('Webforge\Common\System\Dir') ? new \Webforge\Common\System\Dir($this->dir.DIRECTORY_SEPARATOR) : $this->dir.DIRECTORY_SEPARATOR;
+      return $GLOBALS['env']['root'] = class_exists('Webforge\Common\System\Dir') ? new \Webforge\Common\System\Dir($this->dir) : $this->dir;
     }
   }
 
