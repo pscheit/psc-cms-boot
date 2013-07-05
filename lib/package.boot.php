@@ -125,6 +125,10 @@ class BootLoader {
     }
   }
 
+  public function registerRootDirectory() {
+    return $this->registerPackageRoot();
+  }
+
   /**
    * resolves a path to a full path
    * 
