@@ -1,6 +1,7 @@
 {
     "name": "pscheit/psc-cms-boot",
     "description": "Boot strapping package for Webforge",
+    "license": "MIT",
     "authors": [
         {
             "name": "Philipp Scheit",
@@ -8,7 +9,9 @@
         }
     ],
     "minimum-stability": "dev",
-    "require": {
-
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.2.x-dev"
+        }
     }
 }
