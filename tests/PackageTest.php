@@ -9,10 +9,12 @@ class PackageTest extends \PHPUnit_Framework_TestCase {
     $this->testsDir = __DIR__.DIRECTORY_SEPARATOR;
     require_once $this->baseDir.'package.boot.php';
     require_once $this->baseDir.'FakeContainer.php';
+
+    $this->containerClass = 'ACME\Container';
     
     extract($this->help());
-    $this->bootLoader = new BootLoader($path('_files','boot','acceptance'));
-    $this->deepBootLoader = new BootLoader($path('_files','boot','acceptance-as-dependency','vendor','ACME','library'));
+    $this->bootLoader = new BootLoader($path('_files','boot','acceptance'), $this->containerClass);
+    $this->deepBootLoader = new BootLoader($path('_files','boot','acceptance-as-dependency','vendor','ACME','library'), $this->containerClass);
   }
   
   public function testPackageExportsBootLoadedClasse() {
@@ -48,7 +50,7 @@ class PackageTest extends \PHPUnit_Framework_TestCase {
   }
   
   public function testBootLoaderCreatesThePSCCMSContainer() {
-    $this->assertInstanceOf('Psc\CMS\Container', $container = $this->bootLoader->getCMSContainer());
+    $this->assertInstanceOf($this->containerClass, $container = $this->bootLoader->getCMSContainer());
     $this->assertEquals(
       $this->bootLoader->getPath(NULL, BootLoader::RELATIVE),
       $container->dir
@@ -56,7 +58,7 @@ class PackageTest extends \PHPUnit_Framework_TestCase {
   }
   
   public function testBootLoaderInittheCMSContainer() {
-    $this->assertInstanceOf('Psc\CMS\Container', $container = $this->bootLoader->getCMSContainer());
+    $this->assertInstanceOf($this->containerClass, $container = $this->bootLoader->getCMSContainer());
     
     $this->assertTrue($container->init);
   }
@@ -64,7 +66,7 @@ class PackageTest extends \PHPUnit_Framework_TestCase {
   public function testBootLoaderRegistersTheCMSContainerAsGlobal() {
     $this->bootLoader->registerCMSContainer();
     
-    $this->assertInstanceOf('Psc\CMS\Container', $GLOBALS['env']['container']);
+    $this->assertInstanceOf($this->containerClass, $GLOBALS['env']['container']);
     $this->assertSame(
       $this->bootLoader->getCMSContainer(),
       $GLOBALS['env']['container']
@@ -74,7 +76,7 @@ class PackageTest extends \PHPUnit_Framework_TestCase {
   public function testBootLoaderRegistersTheRootAsStringIfWebforgeCommonDirIsNotExistant() {
     extract($this->help());
 
-    $this->bootLoader->registerPackageRoot();
+    $this->bootLoader->registerRootDirectory();
 
     $this->assertEquals(
       $path('_files','boot','acceptance'),
@@ -92,7 +94,6 @@ class PackageTest extends \PHPUnit_Framework_TestCase {
     );
   }
 
-
   public function help() {
     $baseDir = $this->testsDir;
     $path = function() use ($baseDir) {
@@ -103,4 +104,3 @@ class PackageTest extends \PHPUnit_Framework_TestCase {
     return compact('path');
   }
 }
-?>

@@ -1,9 +1,9 @@
 <?php
 
-namespace Psc\CMS;
+namespace ACME;
 
 /**
- * a little fake class to emulate the Psc\CMS\Container for the tests
+ * a little fake class to emulate a Container for the tests
  */
 class Container {
   
@@ -20,4 +20,3 @@ class Container {
   }
   
 }
-?>
