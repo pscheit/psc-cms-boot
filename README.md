@@ -14,11 +14,10 @@ Copy the `lib/package.boot.php` next to your `bootstrap.php`
 use Psc\Boot\BootLoader;
 
 require 'package.boot.php';
-$bootLoader = new BootLoader(__DIR__);
+$bootLoader = new BootLoader(__DIR__, 'ACME\Container');
 $bootLoader->loadComposer();
-$bootLoader->registerCMSContainer(); // this is optional
+$bootLoader->registerContainer(); // this is optional
 ```
 
-When you registered the CMSContainer `$GLOBALS['env']['container']` points to the `Psc\CMS\Container` and `$GLOBALS['env']['root']` points to a `\Webforge\Common\System\Dir` which is the directory of your bootstrap.php.
-
-
+When you registered the Container `$GLOBALS['env']['container']` points to the `ACME\Container`.
+When you do `$bootLoader->registerRootDirectory` the `$GLOBALS['env']['root']` points to a `\Webforge\Common\System\Dir` which is the directory of your bootstrap.php (given here as __DIR__).
