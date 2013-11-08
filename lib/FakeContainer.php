@@ -9,6 +9,8 @@ class Container {
   
   public $dir;
   public $init = FALSE;
+
+  public $autoLoader;
   
   public function __construct($dir) {
     $this->dir = $dir;
@@ -17,6 +19,10 @@ class Container {
   
   public function init() {
     $this->init = TRUE;
+  }
+
+  public function setAutoLoader($autoLoader) {
+    $this->autoLoader = $autoLoader;
   }
   
 }
